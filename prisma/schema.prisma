@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Campaign {
+  id            String   @id @default(uuid())
+  campaignId    String   @unique
+  name          String
+  platform      String
+  status        String   @default("DRAFT")
+  startDate     DateTime
+  endDate       DateTime?
+  angle         String
+  message       String
+  objective     String?
+  targetAudience String?
+  callToAction  String?
+  leads         Int      @default(0)
+  mql           Int      @default(0)
+  sql           Int      @default(0)
+  nq            Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  visuals       CampaignVisual[]
+  metricEntries CampaignMetricEntry[]
+}
+
+model CampaignVisual {
+  id          String   @id @default(uuid())
+  campaignId  String
+  imageUrl    String
+  fileName    String
+  altText     String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CampaignMetricEntry {
+  id          String   @id @default(uuid())
+  campaignId  String
+  date        DateTime
+  leads       Int      @default(0)
+  mql         Int      @default(0)
+  sql         Int      @default(0)
+  nq          Int      @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+}
