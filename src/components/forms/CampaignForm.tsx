@@ -16,6 +16,7 @@ import {
   X,
   FileImage,
   CheckCircle2,
+  DollarSign,
 } from "lucide-react";
 import {
   campaignFormSchema,
@@ -125,6 +126,7 @@ export default function CampaignForm({
       mql: 0,
       sql: 0,
       nq: 0,
+      spend: 0,
     },
   });
 
@@ -486,11 +488,60 @@ export default function CampaignForm({
         </div>
       </section>
 
-      {/* Section 2: Stratégie */}
+      {/* Section 2: Budget */}
       <section className="rounded-xl border border-border bg-surface-card p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-elevated text-sm font-semibold text-text-secondary">
             02
+          </div>
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-text-muted" />
+            <h2 className="text-lg font-semibold text-white">
+              Budget
+            </h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor="spend"
+              className="mb-1.5 block text-sm font-medium text-text-secondary"
+            >
+              Budget consommé (Spend)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">$</span>
+              <input
+                type="number"
+                id="spend"
+                step="0.01"
+                min="0"
+                {...register("spend", { valueAsNumber: true })}
+                placeholder="0.00"
+                className={cn(
+                  "w-full rounded-lg border pl-7 pr-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100",
+                  errors.spend ? "border-red-300" : "border-border"
+                )}
+              />
+            </div>
+            {errors.spend && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.spend.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-text-muted">
+              Montant total dépensé pour cette campagne
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Stratégie */}
+      <section className="rounded-xl border border-border bg-surface-card p-6 shadow-sm">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-elevated text-sm font-semibold text-text-secondary">
+            03
           </div>
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-text-muted" />
@@ -630,11 +681,11 @@ export default function CampaignForm({
         </div>
       </section>
 
-      {/* Section 3: Visuels */}
+      {/* Section 4: Visuels */}
       <section className="rounded-xl border border-border bg-surface-card p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-elevated text-sm font-semibold text-text-secondary">
-            03
+            04
           </div>
           <div className="flex items-center gap-2">
             <Image className="h-4 w-4 text-text-muted" />

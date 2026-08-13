@@ -21,6 +21,7 @@ async function main() {
       mql: 340,
       sql: 85,
       nq: 410,
+      spend: 8500,
       notes: "Meilleure campagne Q4. Taux de conversion MQL/SQL de 25%. Marché cible : France métropolitaine et Maghreb.",
     },
     {
@@ -40,6 +41,7 @@ async function main() {
       mql: 210,
       sql: 62,
       nq: 280,
+      spend: 6200,
       notes: "Campagne en cours. CPC moyen 4.20€. Taux de clic 3.8%. À optimiser les mots-clés négatifs.",
     },
     {
@@ -59,6 +61,7 @@ async function main() {
       mql: 180,
       sql: 48,
       nq: 195,
+      spend: 4800,
       notes: "Bon engagement sur les visuels vidéo. Taux de rebond élevé sur la landing page - à corriger.",
     },
     {
@@ -78,6 +81,7 @@ async function main() {
       mql: 150,
       sql: 55,
       nq: 85,
+      spend: 350,
       notes: "Excellent taux de réponse 35.7%. WhatsApp Business très efficace pour ce segment. Coût d'acquisition quasi nul.",
     },
     {
@@ -97,6 +101,7 @@ async function main() {
       mql: 95,
       sql: 38,
       nq: 62,
+      spend: 7200,
       notes: "Campagne LinkedIn Ads ciblée. CPM élevé mais lead de qualité. Prioriser les connexions directes.",
     },
     {
@@ -116,6 +121,7 @@ async function main() {
       mql: 72,
       sql: 30,
       nq: 28,
+      spend: 950,
       notes: "Campagne en pause pour rédaction des propositions personnalisées. Taux d'ouverture 42%. Reprendre en mai.",
     },
   ];

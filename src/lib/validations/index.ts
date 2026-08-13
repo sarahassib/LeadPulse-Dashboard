@@ -20,6 +20,7 @@ export const campaignFormSchema = z.object({
   mql: z.number().default(0).optional(),
   sql: z.number().default(0).optional(),
   nq: z.number().default(0).optional(),
+  spend: z.number().min(0, "Le budget consommé ne peut pas être négatif.").default(0).optional(),
 }).refine(
   (data) => {
     if (data.endDate && data.startDate) {
@@ -28,6 +29,16 @@ export const campaignFormSchema = z.object({
     return true;
   },
   { message: "La date de fin ne peut pas être antérieure à la date de début.", path: ["endDate"] }
+).refine(
+  (data) => {
+    const leads = data.leads ?? 0;
+    const mql = data.mql ?? 0;
+    const sql = data.sql ?? 0;
+    if (mql > leads) return false;
+    if (sql > mql) return false;
+    return true;
+  },
+  { message: "Les leads doivent être >= MQL >= SQL.", path: ["mql"] }
 );
 
 export type CampaignFormValues = z.infer<typeof campaignFormSchema>;

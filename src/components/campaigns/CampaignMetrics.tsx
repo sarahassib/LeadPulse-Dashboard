@@ -9,9 +9,10 @@ import {
   TrendingUp,
   AlertTriangle,
   HelpCircle,
+  DollarSign,
 } from "lucide-react";
 import { CampaignWithCalculations } from "@/types";
-import { formatPercentage, formatNumber } from "@/lib/calculations";
+import { formatPercentage, formatNumber, formatCurrency } from "@/lib/calculations";
 
 interface CampaignMetricsProps {
   campaign: CampaignWithCalculations;
@@ -50,6 +51,30 @@ export default function CampaignMetrics({ campaign }: CampaignMetricsProps) {
       icon: XCircle,
       color: "text-red-400",
       bgColor: "bg-red-500/10",
+    },
+    {
+      label: "Budget consommé",
+      value: `$${formatCurrency(campaign.spend)}`,
+      description: "Montant total dépensé",
+      icon: DollarSign,
+      color: "text-primary-400",
+      bgColor: "bg-primary-500/10",
+    },
+    {
+      label: "CPL",
+      value: `$${campaign.cpl.toFixed(2)}`,
+      description: "Coût par lead",
+      icon: DollarSign,
+      color: "text-accent-400",
+      bgColor: "bg-accent-500/10",
+    },
+    {
+      label: "Coût par SQL",
+      value: campaign.costPerSql > 0 ? `$${campaign.costPerSql.toFixed(2)}` : "—",
+      description: "Coût par lead SQL",
+      icon: DollarSign,
+      color: "text-accent-300",
+      bgColor: "bg-accent-500/10",
     },
     {
       label: "Taux MQL",

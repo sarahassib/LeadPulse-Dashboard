@@ -24,6 +24,7 @@ model Campaign {
   mql           Int      @default(0)
   sql           Int      @default(0)
   nq            Int      @default(0)
+  spend         Float    @default(0)
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

@@ -2,36 +2,63 @@ import { Campaign, CampaignWithCalculations } from "@/types";
 
 export function calculateMqlRate(leads: number, mql: number): number {
   if (leads === 0) return 0;
-  return Math.round((mql / leads) * 1000) / 10;
+  const rate = (mql / leads) * 100;
+  return Math.round(Math.min(rate, 100) * 10) / 10;
 }
 
 export function calculateSqlGlobalRate(leads: number, sql: number): number {
   if (leads === 0) return 0;
-  return Math.round((sql / leads) * 1000) / 10;
+  const rate = (sql / leads) * 100;
+  return Math.round(Math.min(rate, 100) * 10) / 10;
 }
 
 export function calculateSqlFromMqlRate(mql: number, sql: number): number {
   if (mql === 0) return 0;
-  return Math.round((sql / mql) * 1000) / 10;
+  const rate = (sql / mql) * 100;
+  return Math.round(Math.min(rate, 100) * 10) / 10;
 }
 
 export function calculateNqRate(leads: number, nq: number): number {
   if (leads === 0) return 0;
-  return Math.round((nq / leads) * 1000) / 10;
+  const rate = (nq / leads) * 100;
+  return Math.round(Math.min(rate, 100) * 10) / 10;
 }
 
 export function calculateUnclassifiedLeads(leads: number, mql: number, nq: number): number {
-  return leads - mql - nq;
+  return Math.max(0, leads - mql - nq);
+}
+
+export function calculateCpl(spend: number, leads: number): number {
+  if (leads === 0 || spend === 0) return 0;
+  return Math.round((spend / leads) * 100) / 100;
+}
+
+export function calculateCostPerSql(spend: number, sql: number): number {
+  if (sql === 0 || spend === 0) return 0;
+  return Math.round((spend / sql) * 100) / 100;
+}
+
+export function clampConversionValues(leads: number, mql: number, sql: number): { leads: number; mql: number; sql: number } {
+  const safeLeads = Math.max(0, leads);
+  const safeMql = Math.min(Math.max(0, mql), safeLeads);
+  const safeSql = Math.min(Math.max(0, sql), safeMql);
+  return { leads: safeLeads, mql: safeMql, sql: safeSql };
 }
 
 export function enrichCampaign(campaign: Campaign): CampaignWithCalculations {
+  const { leads, mql, sql } = clampConversionValues(campaign.leads, campaign.mql, campaign.sql);
   return {
     ...campaign,
-    mqlRate: calculateMqlRate(campaign.leads, campaign.mql),
-    sqlGlobalRate: calculateSqlGlobalRate(campaign.leads, campaign.sql),
-    sqlFromMqlRate: calculateSqlFromMqlRate(campaign.mql, campaign.sql),
-    nqRate: calculateNqRate(campaign.leads, campaign.nq),
-    unclassifiedLeads: calculateUnclassifiedLeads(campaign.leads, campaign.mql, campaign.nq),
+    leads,
+    mql,
+    sql,
+    mqlRate: calculateMqlRate(leads, mql),
+    sqlGlobalRate: calculateSqlGlobalRate(leads, sql),
+    sqlFromMqlRate: calculateSqlFromMqlRate(mql, sql),
+    nqRate: calculateNqRate(leads, campaign.nq),
+    unclassifiedLeads: calculateUnclassifiedLeads(leads, mql, campaign.nq),
+    cpl: calculateCpl(campaign.spend, leads),
+    costPerSql: calculateCostPerSql(campaign.spend, sql),
   };
 }
 
@@ -48,7 +75,6 @@ export function getBestCampaign(campaigns: Campaign[]): Campaign | null {
 
 export function getCampaignPerformanceBadge(campaign: Campaign): { label: string; color: string; bgColor: string } | null {
   const sqlRate = calculateSqlGlobalRate(campaign.leads, campaign.sql);
-  const mqlRate = calculateMqlRate(campaign.leads, campaign.mql);
   const nqRate = calculateNqRate(campaign.leads, campaign.nq);
 
   if (sqlRate >= 5 && campaign.leads >= 500) {
@@ -74,9 +100,20 @@ export function formatNumber(value: number): string {
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+export function formatCurrency(value: number): string {
+  if (value === 0) return "0";
+  return value.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+}
+
+export function formatCurrencyCompact(value: number): string {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(1)}k`;
+  }
+  return formatCurrency(value);
+}
+
 export function generateCampaignId(): string {
   const year = new Date().getFullYear();
   const random = Math.floor(Math.random() * 9000) + 1000;
   return `CMP-${year}-${random}`;
 }
-

@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
-  BarChart3,
-  Users,
+  LayoutGrid,
+  RefreshCw,
   TrendingUp,
   Target,
   AlertTriangle,
-  RefreshCw,
-  LayoutGrid,
 } from "lucide-react";
 
 import {
@@ -19,16 +17,14 @@ import {
   CampaignWithCalculations,
   CampaignPlatform,
   CampaignStatus,
+  DateRangeOption,
 } from "@/types";
 import {
   enrichCampaign,
   getBestCampaign,
   formatPercentage,
   formatNumber,
-  calculateMqlRate,
-  calculateSqlGlobalRate,
-  calculateSqlFromMqlRate,
-  calculateNqRate,
+  formatCurrency,
 } from "@/lib/calculations";
 import {
   getPlatformLabel,
@@ -37,7 +33,8 @@ import {
   getStatusColor,
 } from "@/lib/utils";
 
-import KpiCard from "@/components/dashboard/KpiCard";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import KpiSection from "@/components/dashboard/KpiSection";
 import BestCampaignCard from "@/components/dashboard/BestCampaignCard";
 import CampaignCard from "@/components/campaigns/CampaignCard";
 import { VolumeBarChart } from "@/components/charts/VolumeBarChart";
@@ -78,6 +75,7 @@ export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartLimit, setChartLimit] = useState(10);
+  const [dateRange, setDateRange] = useState<DateRangeOption>("all");
 
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<CampaignPlatform | "ALL">("ALL");
@@ -130,6 +128,26 @@ export default function DashboardPage() {
       result = result.filter((c) => c.status === status);
     }
 
+    // Date range filter
+    if (dateRange !== "all") {
+      const now = new Date();
+      let startDate: Date;
+      switch (dateRange) {
+        case "today":
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case "7days":
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "month":
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        default:
+          startDate = new Date(0);
+      }
+      result = result.filter((c) => new Date(c.startDate) >= startDate);
+    }
+
     result = [...result].sort((a, b) => {
       const record = (x: CampaignWithCalculations) =>
         x as unknown as Record<string, number>;
@@ -140,7 +158,7 @@ export default function DashboardPage() {
     });
 
     return result;
-  }, [enrichedCampaigns, search, platform, status, sortBy, sortOrder]);
+  }, [enrichedCampaigns, search, platform, status, sortBy, sortOrder, dateRange]);
 
   const totalPages = Math.ceil(filteredCampaigns.length / ITEMS_PER_PAGE);
 
@@ -151,8 +169,9 @@ export default function DashboardPage() {
         mql: acc.mql + c.mql,
         sql: acc.sql + c.sql,
         nq: acc.nq + c.nq,
+        spend: acc.spend + c.spend,
       }),
-      { leads: 0, mql: 0, sql: 0, nq: 0 }
+      { leads: 0, mql: 0, sql: 0, nq: 0, spend: 0 }
     );
   }, [filteredCampaigns]);
 
@@ -168,10 +187,6 @@ export default function DashboardPage() {
   const activeCount = filteredCampaigns.filter(
     (c) => c.status === "ACTIVE"
   ).length;
-  const mqlRate = calculateMqlRate(totals.leads, totals.mql);
-  const sqlGlobalRate = calculateSqlGlobalRate(totals.leads, totals.sql);
-  const sqlFromMqlRate = calculateSqlFromMqlRate(totals.mql, totals.sql);
-  const nqRate = calculateNqRate(totals.leads, totals.nq);
 
   const resetFilters = () => {
     setSearch("");
@@ -180,16 +195,43 @@ export default function DashboardPage() {
     setSortBy("leads");
     setSortOrder("desc");
     setCurrentPage(1);
+    setDateRange("all");
   };
 
   const handleView = (id: string) => router.push(`/campaigns/${id}`);
+
+  const handleExport = useCallback(() => {
+    const headers = ["Name", "Platform", "Status", "Leads", "MQL", "SQL", "NQ", "Spend", "CPL", "Cost/SQL"];
+    const rows = filteredCampaigns.map((c) => [
+      c.name,
+      c.platform,
+      c.status,
+      c.leads,
+      c.mql,
+      c.sql,
+      c.nq,
+      c.spend,
+      c.cpl.toFixed(2),
+      c.costPerSql.toFixed(2),
+    ]);
+
+    const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `amm-campaigns-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    success("Données exportées avec succès");
+  }, [filteredCampaigns, success]);
 
   const hasFilters =
     search !== "" ||
     platform !== "ALL" ||
     status !== "ALL" ||
     sortBy !== "leads" ||
-    sortOrder !== "desc";
+    sortOrder !== "desc" ||
+    dateRange !== "all";
 
   if (loading) {
     return (
@@ -206,8 +248,8 @@ export default function DashboardPage() {
           <div className="h-10 w-44 bg-surface-elevated rounded-lg animate-pulse" />
           <div className="h-10 w-36 bg-surface-elevated rounded-lg animate-pulse" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {Array.from({ length: 10 }).map((_, i) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <KpiSkeleton key={i} />
           ))}
         </div>
@@ -227,24 +269,14 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            Tableau de bord des campagnes
-          </h1>
-          <p className="text-sm text-text-muted">
-            Vue d&apos;ensemble des performances de vos campagnes AMM
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/campaigns/new")}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-black text-sm font-medium rounded-lg hover:bg-primary-400 transition-colors shrink-0"
-        >
-          <Plus size={16} />
-          Ajouter une campagne
-        </button>
-      </div>
+      {/* Header */}
+      <DashboardHeader
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        onExport={handleExport}
+      />
 
+      {/* Search & Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search
@@ -314,6 +346,7 @@ export default function DashboardPage() {
           <option value="mqlRate-desc">Taux MQL décroissant</option>
           <option value="nq-desc">NQ décroissant</option>
           <option value="nqRate-desc">Taux NQ décroissant</option>
+          <option value="spend-desc">Spend décroissant</option>
         </select>
 
         {hasFilters && (
@@ -327,75 +360,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <KpiCard
-          title="Total campagnes"
-          value={formatNumber(filteredCampaigns.length)}
-          icon={<BarChart3 size={20} />}
-          color="bg-primary-500/10 text-primary-400"
-        />
-        <KpiCard
-          title="Campagnes actives"
-          value={formatNumber(activeCount)}
-          icon={<Target size={20} />}
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Total Leads"
-          value={formatNumber(totals.leads)}
-          icon={<Users size={20} />}
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Total MQL"
-          value={formatNumber(totals.mql)}
-          icon={<TrendingUp size={20} />}
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Total SQL"
-          value={formatNumber(totals.sql)}
-          icon={<Target size={20} />}
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Total NQ"
-          value={formatNumber(totals.nq)}
-          icon={<AlertTriangle size={20} />}
-          color="bg-red-500/10 text-red-400"
-        />
-        <KpiCard
-          title="Taux MQL"
-          value={formatPercentage(mqlRate)}
-          icon={<TrendingUp size={20} />}
-          description="MQL / Leads"
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Taux SQL global"
-          value={formatPercentage(sqlGlobalRate)}
-          icon={<Target size={20} />}
-          description="SQL / Leads"
-          color="bg-primary-500/10 text-primary-400"
-        />
-        <KpiCard
-          title="Taux SQL / MQL"
-          value={formatPercentage(sqlFromMqlRate)}
-          icon={<TrendingUp size={20} />}
-          description="SQL / MQL"
-          color="bg-accent-500/10 text-accent-400"
-        />
-        <KpiCard
-          title="Taux NQ"
-          value={formatPercentage(nqRate)}
-          icon={<AlertTriangle size={20} />}
-          description="NQ / Leads"
-          color="bg-red-500/10 text-red-400"
-        />
-      </div>
+      {/* KPI Section */}
+      <KpiSection totals={totals} activeCount={activeCount} />
 
+      {/* Best Campaign */}
       {bestCampaignEnriched && <BestCampaignCard campaign={bestCampaignEnriched} />}
 
+      {/* Campaign Grid */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <LayoutGrid size={18} className="text-text-muted" />
@@ -496,6 +467,7 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -527,5 +499,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-

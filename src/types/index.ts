@@ -41,6 +41,7 @@ export interface Campaign {
   mql: number;
   sql: number;
   nq: number;
+  spend: number;
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +53,8 @@ export interface CampaignWithCalculations extends Campaign {
   sqlFromMqlRate: number;
   nqRate: number;
   unclassifiedLeads: number;
+  cpl: number;
+  costPerSql: number;
 }
 
 export interface CampaignFormData {
@@ -70,6 +73,7 @@ export interface CampaignFormData {
   mql?: number;
   sql?: number;
   nq?: number;
+  spend?: number;
   notes?: string | null;
   visuals?: { imageUrl: string; fileName: string; altText?: string; isPrimary?: boolean }[];
 }
@@ -89,13 +93,18 @@ export type SortField =
   | "mql"
   | "sql"
   | "nq"
+  | "spend"
   | "mqlRate"
   | "sqlGlobalRate"
   | "sqlFromMqlRate"
-  | "nqRate";
+  | "nqRate"
+  | "cpl"
+  | "costPerSql";
 
 export interface PerformanceBadge {
   label: string;
   color: string;
   bgColor: string;
 }
+
+export type DateRangeOption = "today" | "7days" | "month" | "all";

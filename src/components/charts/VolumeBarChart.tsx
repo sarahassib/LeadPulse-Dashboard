@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { CampaignWithCalculations } from "@/types";
 import { formatNumber } from "@/lib/calculations";
+import { CustomTooltip } from "./CustomTooltip";
 
 interface VolumeBarChartProps {
   campaigns: CampaignWithCalculations[];
@@ -15,7 +16,7 @@ export function VolumeBarChart({ campaigns, limit = 10 }: VolumeBarChartProps) {
     .slice(0, limit);
 
   const data = sorted.map((c) => ({
-    name: c.name.length > 20 ? c.name.slice(0, 20) + "..." : c.name,
+    name: c.name.length > 15 ? c.name.slice(0, 15) + "…" : c.name,
     Leads: c.leads,
     MQL: c.mql,
     SQL: c.sql,
@@ -26,15 +27,19 @@ export function VolumeBarChart({ campaigns, limit = 10 }: VolumeBarChartProps) {
     <div className="bg-surface-card rounded-xl border border-border p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Comparaison des volumes</h3>
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#a0a0a0" }} angle={-20} textAnchor="end" height={80} />
+          <XAxis
+            dataKey="name"
+            tick={{ fontSize: 10, fill: "#a0a0a0" }}
+            angle={-35}
+            textAnchor="end"
+            height={80}
+            interval={0}
+          />
           <YAxis tick={{ fontSize: 12, fill: "#a0a0a0" }} />
           <Tooltip
-            contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "8px" }}
-            labelStyle={{ color: "#f5f5f5" }}
-            itemStyle={{ color: "#a0a0a0" }}
-            formatter={(value: number) => formatNumber(value)}
+            content={<CustomTooltip formatter={(value) => formatNumber(value)} />}
           />
           <Legend wrapperStyle={{ color: "#a0a0a0" }} />
           <Bar dataKey="Leads" fill="#facc15" radius={[4, 4, 0, 0]} />

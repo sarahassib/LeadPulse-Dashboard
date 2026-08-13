@@ -57,6 +57,22 @@ function generateDiagnostics(
     });
   }
 
+  if (campaign.spend > 0 && campaign.cpl > 50) {
+    diagnostics.push({
+      message:
+        `Le coût par lead (CPL) de $${campaign.cpl.toFixed(2)} est élevé. Envisager d'optimiser le ciblage ou les créatives pour réduire les coûts d'acquisition.`,
+      type: "warning",
+    });
+  }
+
+  if (campaign.spend > 0 && campaign.cpl > 0 && campaign.cpl < 10) {
+    diagnostics.push({
+      message:
+        `Excellent CPL de $${campaign.cpl.toFixed(2)}. La campagne est très efficace en termes de coût d'acquisition.`,
+      type: "positive",
+    });
+  }
+
   return diagnostics;
 }
 

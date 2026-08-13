@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { CampaignWithCalculations, CampaignPlatform } from "@/types";
 import { formatNumber } from "@/lib/calculations";
+import { CustomTooltip } from "./CustomTooltip";
 
 interface PlatformDonutChartProps {
   campaigns: CampaignWithCalculations[];
@@ -66,10 +67,7 @@ export function PlatformDonutChart({ campaigns }: PlatformDonutChartProps) {
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "8px" }}
-            labelStyle={{ color: "#f5f5f5" }}
-            itemStyle={{ color: "#a0a0a0" }}
-            formatter={(value: number) => formatNumber(value)}
+            content={<CustomTooltip formatter={(value) => formatNumber(value)} />}
           />
           <Legend
             verticalAlign="bottom"
