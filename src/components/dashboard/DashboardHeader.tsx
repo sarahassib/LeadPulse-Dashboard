@@ -31,7 +31,7 @@ export default function DashboardHeader({
           Tableau de bord des campagnes
         </h1>
         <p className="text-sm text-text-muted">
-          Vue d&apos;ensemble des performances de vos campagnes AMM
+          Vue d&apos;ensemble des performances de vos campagnes LeadPulse
         </p>
       </div>
 

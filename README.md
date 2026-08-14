@@ -1,6 +1,6 @@
-# AMM Campaign Performance Dashboard
+# LeadPulse Analytics
 
-Tableau de bord interne pour suivre les performances des campagnes marketing d'AMM (Atlantic Machinery Manufacturing).
+Tableau de bord interne pour suivre les performances des campagnes marketing de LeadPulse.
 
 ## Stack technique
 
@@ -15,7 +15,7 @@ Tableau de bord interne pour suivre les performances des campagnes marketing d'A
 ## Installation
 
 ```bash
-cd amm-dashboard
+cd leadpulse-analytics
 npm install
 npx prisma db push
 npx tsx prisma/seed.ts
@@ -51,7 +51,7 @@ Pour migrer vers PostgreSQL :
 1. Installer PostgreSQL et créer une base de données
 2. Modifier `.env` :
    ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/amm_dashboard"
+   DATABASE_URL="postgresql://user:password@localhost:5432/leadpulse_analytics"
    ```
 3. Modifier `prisma/schema.prisma` :
    ```prisma

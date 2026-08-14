@@ -93,7 +93,7 @@ async function main() {
       endDate: new Date("2026-09-30"),
       angle: "Solutions complètes d'équipements pour l'industrie du béton",
       message:
-        "AMM Équipements accompagne les industriels du béton avec une gamme complète de centrales, bétonnières et systèmes de malaxage. Expertise depuis 15 ans. Certifié ISO 9001. Contactez nos ingénieurs.",
+        "LeadPulse Équipements accompagne les industriels du béton avec une gamme complète de centrales, bétonnières et systèmes de malaxage. Expertise depuis 15 ans. Certifié ISO 9001. Contactez nos ingénieurs.",
       objective: "Génération de leads B2B de haut niveau via LinkedIn",
       targetAudience: "Directeurs d'achat, chefs de projet, ingénieurs BTP, responsables production",
       callToAction: "Échanger avec un expert",

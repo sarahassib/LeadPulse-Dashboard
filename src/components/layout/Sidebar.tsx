@@ -80,8 +80,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Factory size={20} className="text-black" />
           </div>
           <div>
-            <span className="text-lg font-bold tracking-tight text-white">AMM</span>
-            <span className="block text-[10px] text-primary-400 font-medium uppercase tracking-widest">Dashboard</span>
+            <span className="text-lg font-bold tracking-tight text-white">LeadPulse</span>
+            <span className="block text-[10px] text-primary-400 font-medium uppercase tracking-widest">Analytics</span>
           </div>
           <button
             onClick={onClose}

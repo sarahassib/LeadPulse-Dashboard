@@ -6,8 +6,8 @@ import AppLayout from "@/components/layout/AppLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AMM Campaign Dashboard",
-  description: "Tableau de bord des campagnes AMM - Suivez les leads, la qualification et les performances de vos campagnes",
+  title: "LeadPulse Analytics",
+  description: "Tableau de bord des campagnes LeadPulse - Suivez les leads, la qualification et les performances de vos campagnes",
 };
 
 export default function RootLayout({
