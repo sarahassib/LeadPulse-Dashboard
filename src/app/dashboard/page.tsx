@@ -219,7 +219,7 @@ export default function DashboardPage() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `amm-campaigns-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `leadpulse-campaigns-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
     success("Données exportées avec succès");
@@ -309,7 +309,8 @@ export default function DashboardPage() {
           <option value="LINKEDIN">LinkedIn</option>
           <option value="EMAIL">Email</option>
           <option value="WHATSAPP">WhatsApp</option>
-          <option value="ORGANIC_SOCIAL">Réseaux sociaux organique</option>
+          <option value="TIKTOK">TikTok</option>
+          <option value="SNAPCHAT">Snapchat</option>
           <option value="OTHER">Autre</option>
         </select>
 
@@ -323,9 +324,11 @@ export default function DashboardPage() {
         >
           <option value="ALL">Tous les statuts</option>
           <option value="DRAFT">Brouillon</option>
-          <option value="ACTIVE">Active</option>
+          <option value="TO_DIFFUSE">À diffuser</option>
+          <option value="ACTIVE">En cours</option>
           <option value="PAUSED">En pause</option>
           <option value="COMPLETED">Terminée</option>
+          <option value="CANCELLED">Annulée</option>
         </select>
 
         <select

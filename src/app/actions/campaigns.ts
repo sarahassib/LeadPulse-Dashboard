@@ -14,10 +14,19 @@ export async function createCampaign(data: CampaignFormData) {
       startDate: new Date(data.startDate),
       endDate: data.endDate ? new Date(data.endDate) : null,
       angle: data.angle,
+      cible: data.cible || null,
+      objectif: data.objectif || null,
+      region: data.region || null,
+      countries: data.countries || null,
       message: data.message,
+      headline: data.headline || null,
+      description: data.description || null,
+      visualType: data.visualType || null,
+      callToAction: data.callToAction || null,
+      destinationType: data.destinationType || null,
+      destinationUrl: data.destinationUrl || null,
       objective: data.objective || null,
       targetAudience: data.targetAudience || null,
-      callToAction: data.callToAction || null,
       leads: data.leads ?? 0,
       mql: data.mql ?? 0,
       sql: data.sql ?? 0,
@@ -42,10 +51,19 @@ export async function updateCampaign(id: string, data: CampaignFormData) {
       startDate: new Date(data.startDate),
       endDate: data.endDate ? new Date(data.endDate) : null,
       angle: data.angle,
+      cible: data.cible || null,
+      objectif: data.objectif || null,
+      region: data.region || null,
+      countries: data.countries || null,
       message: data.message,
+      headline: data.headline || null,
+      description: data.description || null,
+      visualType: data.visualType || null,
+      callToAction: data.callToAction || null,
+      destinationType: data.destinationType || null,
+      destinationUrl: data.destinationUrl || null,
       objective: data.objective || null,
       targetAudience: data.targetAudience || null,
-      callToAction: data.callToAction || null,
       leads: data.leads ?? 0,
       mql: data.mql ?? 0,
       sql: data.sql ?? 0,
@@ -74,7 +92,7 @@ export async function duplicateCampaign(id: string) {
     throw new Error("Campaign not found");
   }
 
-  const newCampaignId = `CAMP-${uuidv4().slice(0, 8).toUpperCase()}`;
+  const newCampaignId = `CMP-${uuidv4().slice(0, 8).toUpperCase()}`;
 
   const duplicated = await prisma.campaign.create({
     data: {
@@ -85,10 +103,19 @@ export async function duplicateCampaign(id: string) {
       startDate: original.startDate,
       endDate: original.endDate,
       angle: original.angle,
+      cible: original.cible,
+      objectif: original.objectif,
+      region: original.region,
+      countries: original.countries,
       message: original.message,
+      headline: original.headline,
+      description: original.description,
+      visualType: original.visualType,
+      callToAction: original.callToAction,
+      destinationType: original.destinationType,
+      destinationUrl: original.destinationUrl,
       objective: original.objective,
       targetAudience: original.targetAudience,
-      callToAction: original.callToAction,
       leads: original.leads,
       mql: original.mql,
       sql: original.sql,
@@ -147,17 +174,9 @@ export async function getCampaigns(filters?: DashboardFilters) {
   const sortOrder = filters?.sortOrder || "desc";
 
   const validSortFields = [
-    "name",
-    "platform",
-    "status",
-    "startDate",
-    "leads",
-    "mql",
-    "sql",
-    "nq",
-    "spend",
-    "createdAt",
-    "updatedAt",
+    "name", "platform", "status", "startDate",
+    "leads", "mql", "sql", "nq", "spend",
+    "createdAt", "updatedAt",
   ];
   const orderByField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
 

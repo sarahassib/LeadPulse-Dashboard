@@ -4,14 +4,28 @@ export type CampaignPlatform =
   | "LINKEDIN"
   | "EMAIL"
   | "WHATSAPP"
-  | "ORGANIC_SOCIAL"
+  | "TIKTOK"
+  | "SNAPCHAT"
   | "OTHER";
 
 export type CampaignStatus =
   | "DRAFT"
+  | "TO_DIFFUSE"
   | "ACTIVE"
   | "PAUSED"
-  | "COMPLETED";
+  | "COMPLETED"
+  | "CANCELLED";
+
+export type Region = "MAROC" | "AFRIQUE";
+
+export type VisualType = "REEL" | "VIDEO" | "CAROUSEL" | "SINGLE_IMAGE";
+
+export type DestinationType =
+  | "WHATSAPP"
+  | "META_INSTANT_FORM"
+  | "LANDING_PAGE"
+  | "WEBSITE"
+  | "DIRECT_CALL";
 
 export interface CampaignVisual {
   id: string;
@@ -32,10 +46,19 @@ export interface Campaign {
   startDate: Date;
   endDate?: Date | null;
   angle: string;
+  cible?: string | null;
+  objectif?: string | null;
+  region?: string | null;
+  countries?: string | null;
   message: string;
+  headline?: string | null;
+  description?: string | null;
+  visualType?: string | null;
+  callToAction?: string | null;
+  destinationType?: string | null;
+  destinationUrl?: string | null;
   objective?: string | null;
   targetAudience?: string | null;
-  callToAction?: string | null;
   visuals: CampaignVisual[];
   leads: number;
   mql: number;
@@ -65,10 +88,19 @@ export interface CampaignFormData {
   startDate: string;
   endDate?: string | null;
   angle: string;
+  cible?: string | null;
+  objectif?: string | null;
+  region?: string | null;
+  countries?: string | null;
   message: string;
+  headline?: string | null;
+  description?: string | null;
+  visualType?: string | null;
+  callToAction?: string | null;
+  destinationType?: string | null;
+  destinationUrl?: string | null;
   objective?: string | null;
   targetAudience?: string | null;
-  callToAction?: string | null;
   leads?: number;
   mql?: number;
   sql?: number;
@@ -108,3 +140,24 @@ export interface PerformanceBadge {
 }
 
 export type DateRangeOption = "today" | "7days" | "month" | "all";
+
+export interface Setting {
+  id: string;
+  category: string;
+  value: string;
+  createdAt: Date;
+}
+
+export const AFRICAN_COUNTRIES = [
+  "Algérie", "Angola", "Bénin", "Botswana", "Burkina Faso",
+  "Burundi", "Cameroun", "Cap-Vert", "Centrafrique", "Comores",
+  "Congo", "Côte d'Ivoire", "Djibouti", "Égypte", "Érythrée",
+  "Eswatini", "Éthiopie", "Gabon", "Gambie", "Ghana",
+  "Guinée", "Guinée-Bissau", "Guinée équatoriale", "Kenya", "Lesotho",
+  "Liberia", "Libye", "Madagascar", "Malawi", "Mali",
+  "Maroc", "Maurice", "Mauritanie", "Mozambique", "Namibie",
+  "Niger", "Nigeria", "Ouganda", "République démocratique du Congo",
+  "République du Congo", "Rwanda", "São Tomé-et-Principe", "Sénégal",
+  "Seychelles", "Sierra Leone", "Somalie", "Soudan", "Soudan du Sud",
+  "Tanzanie", "Tchad", "Togo", "Tunisie", "Zambie", "Zimbabwe",
+] as const;

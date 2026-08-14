@@ -35,16 +35,19 @@ const platformOptions = [
   { value: "LINKEDIN", label: "LinkedIn" },
   { value: "EMAIL", label: "Email" },
   { value: "WHATSAPP", label: "WhatsApp" },
-  { value: "ORGANIC_SOCIAL", label: "Réseaux sociaux organique" },
+  { value: "TIKTOK", label: "TikTok" },
+  { value: "SNAPCHAT", label: "Snapchat" },
   { value: "OTHER", label: "Autre" },
 ];
 
 const statusOptions = [
   { value: "ALL", label: "Tous les statuts" },
   { value: "DRAFT", label: "Brouillon" },
-  { value: "ACTIVE", label: "Active" },
+  { value: "TO_DIFFUSE", label: "À diffuser" },
+  { value: "ACTIVE", label: "En cours" },
   { value: "PAUSED", label: "En pause" },
   { value: "COMPLETED", label: "Terminée" },
+  { value: "CANCELLED", label: "Annulée" },
 ];
 
 const sortOptions = [

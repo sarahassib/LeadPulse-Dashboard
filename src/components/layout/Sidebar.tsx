@@ -11,6 +11,7 @@ import {
   Factory,
   ChevronLeft,
   FileText,
+  Sliders,
 } from "lucide-react";
 
 interface NavItem {
@@ -43,7 +44,7 @@ const navItems: NavItem[] = [
   {
     label: "Paramètres",
     href: "/settings",
-    icon: <Settings size={20} />,
+    icon: <Sliders size={20} />,
   },
 ];
 

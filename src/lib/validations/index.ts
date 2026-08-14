@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-const PLATFORMS = ["META", "GOOGLE_SEARCH", "LINKEDIN", "EMAIL", "WHATSAPP", "ORGANIC_SOCIAL", "OTHER"] as const;
-const STATUSES = ["DRAFT", "ACTIVE", "PAUSED", "COMPLETED"] as const;
+const PLATFORMS = ["META", "GOOGLE_SEARCH", "LINKEDIN", "EMAIL", "WHATSAPP", "TIKTOK", "SNAPCHAT", "OTHER"] as const;
+const STATUSES = ["DRAFT", "TO_DIFFUSE", "ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"] as const;
 
 export const campaignFormSchema = z.object({
   campaignId: z.string().min(1, "L'ID de campagne est obligatoire."),
@@ -11,10 +11,19 @@ export const campaignFormSchema = z.object({
   startDate: z.string().min(1, "La date de début est obligatoire."),
   endDate: z.string().optional().nullable(),
   angle: z.string().min(1, "L'angle de campagne est obligatoire."),
+  cible: z.string().optional().nullable(),
+  objectif: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  countries: z.string().optional().nullable(),
   message: z.string().min(1, "Le message principal est obligatoire."),
+  headline: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  visualType: z.string().optional().nullable(),
+  callToAction: z.string().optional().nullable(),
+  destinationType: z.string().optional().nullable(),
+  destinationUrl: z.string().optional().nullable(),
   objective: z.string().optional().nullable(),
   targetAudience: z.string().optional().nullable(),
-  callToAction: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   leads: z.number().default(0).optional(),
   mql: z.number().default(0).optional(),

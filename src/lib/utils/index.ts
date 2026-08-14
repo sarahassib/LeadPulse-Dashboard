@@ -7,11 +7,12 @@ export function cn(...inputs: ClassValue[]): string {
 export function getPlatformLabel(platform: string): string {
   const labels: Record<string, string> = {
     META: "Meta Ads",
-    GOOGLE_SEARCH: "Google Search",
+    GOOGLE_SEARCH: "Google Ads",
     LINKEDIN: "LinkedIn",
     EMAIL: "Email",
     WHATSAPP: "WhatsApp",
-    ORGANIC_SOCIAL: "Réseaux sociaux organique",
+    TIKTOK: "TikTok",
+    SNAPCHAT: "Snapchat",
     OTHER: "Autre",
   };
   return labels[platform] || platform;
@@ -24,7 +25,8 @@ export function getPlatformColor(platform: string): string {
     LINKEDIN: "bg-accent-600/10 text-accent-300",
     EMAIL: "bg-primary-600/10 text-primary-300",
     WHATSAPP: "bg-primary-400/10 text-primary-300",
-    ORGANIC_SOCIAL: "bg-accent-400/10 text-accent-300",
+    TIKTOK: "bg-red-500/10 text-red-400",
+    SNAPCHAT: "bg-yellow-500/10 text-yellow-400",
     OTHER: "bg-surface-elevated text-text-muted",
   };
   return colors[platform] || "bg-surface-elevated text-text-muted";
@@ -33,9 +35,11 @@ export function getPlatformColor(platform: string): string {
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     DRAFT: "Brouillon",
-    ACTIVE: "Active",
+    TO_DIFFUSE: "À diffuser",
+    ACTIVE: "En cours",
     PAUSED: "En pause",
     COMPLETED: "Terminée",
+    CANCELLED: "Annulée",
   };
   return labels[status] || status;
 }
@@ -43,9 +47,11 @@ export function getStatusLabel(status: string): string {
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     DRAFT: "bg-surface-elevated text-text-muted",
+    TO_DIFFUSE: "bg-accent-500/10 text-accent-400",
     ACTIVE: "bg-primary-500/10 text-primary-400",
     PAUSED: "bg-accent-500/10 text-accent-400",
     COMPLETED: "bg-primary-600/10 text-primary-300",
+    CANCELLED: "bg-red-500/10 text-red-400",
   };
   return colors[status] || "bg-surface-elevated text-text-muted";
 }

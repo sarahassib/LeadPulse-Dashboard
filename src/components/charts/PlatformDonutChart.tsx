@@ -9,23 +9,25 @@ interface PlatformDonutChartProps {
   campaigns: CampaignWithCalculations[];
 }
 
-const PLATFORM_COLORS: Record<CampaignPlatform, string> = {
+const PLATFORM_COLORS: Record<string, string> = {
   META: "#facc15",
   GOOGLE_SEARCH: "#60a5fa",
   LINKEDIN: "#2563eb",
   EMAIL: "#eab308",
   WHATSAPP: "#fde047",
-  ORGANIC_SOCIAL: "#93c5fd",
+  TIKTOK: "#ff0050",
+  SNAPCHAT: "#fffc00",
   OTHER: "#666666",
 };
 
-const PLATFORM_LABELS: Record<CampaignPlatform, string> = {
+const PLATFORM_LABELS: Record<string, string> = {
   META: "Meta",
   GOOGLE_SEARCH: "Google",
   LINKEDIN: "LinkedIn",
   EMAIL: "Email",
   WHATSAPP: "WhatsApp",
-  ORGANIC_SOCIAL: "Organic",
+  TIKTOK: "TikTok",
+  SNAPCHAT: "Snapchat",
   OTHER: "Autre",
 };
 
@@ -40,9 +42,9 @@ export function PlatformDonutChart({ campaigns }: PlatformDonutChartProps) {
 
   const data = Object.entries(counts)
     .map(([platform, count]) => ({
-      name: PLATFORM_LABELS[platform as CampaignPlatform] || platform,
+      name: PLATFORM_LABELS[platform] || platform,
       value: count,
-      color: PLATFORM_COLORS[platform as CampaignPlatform] || "#666666",
+      color: PLATFORM_COLORS[platform] || "#666666",
     }))
     .sort((a, b) => b.value - a.value);
 

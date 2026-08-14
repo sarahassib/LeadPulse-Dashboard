@@ -43,16 +43,9 @@ export async function GET(request: NextRequest) {
   }
 
   const validSortFields = [
-    "name",
-    "platform",
-    "status",
-    "startDate",
-    "leads",
-    "mql",
-    "sql",
-    "nq",
-    "createdAt",
-    "updatedAt",
+    "name", "platform", "status", "startDate",
+    "leads", "mql", "sql", "nq", "spend",
+    "createdAt", "updatedAt",
   ];
   const orderByField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
 
@@ -77,14 +70,24 @@ export async function POST(request: NextRequest) {
       startDate: new Date(body.startDate),
       endDate: body.endDate ? new Date(body.endDate) : null,
       angle: body.angle,
+      cible: body.cible || null,
+      objectif: body.objectif || null,
+      region: body.region || null,
+      countries: body.countries || null,
       message: body.message,
+      headline: body.headline || null,
+      description: body.description || null,
+      visualType: body.visualType || null,
+      callToAction: body.callToAction || null,
+      destinationType: body.destinationType || null,
+      destinationUrl: body.destinationUrl || null,
       objective: body.objective || null,
       targetAudience: body.targetAudience || null,
-      callToAction: body.callToAction || null,
       leads: body.leads ?? 0,
       mql: body.mql ?? 0,
       sql: body.sql ?? 0,
       nq: body.nq ?? 0,
+      spend: body.spend ?? 0,
       notes: body.notes || null,
       visuals: body.visuals
         ? {
