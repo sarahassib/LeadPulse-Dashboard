@@ -180,6 +180,7 @@ export default function CampaignForm({
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -226,33 +227,16 @@ export default function CampaignForm({
     setUploadingFiles((prev) => [...prev, { id, file, progress: 0, status: "uploading" }]);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const result = await new Promise<{ url: string; fileName: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            setUploadingFiles((prev) => prev.map((f) => (f.id === id ? { ...f, progress } : f)));
-          }
-        });
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            const err = JSON.parse(xhr.responseText);
-            reject(new Error(err.error || "Erreur lors de l'upload"));
-          }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Erreur réseau")));
-        xhr.open("POST", "/api/upload");
-        xhr.send(formData);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Erreur de lecture du fichier"));
+        reader.readAsDataURL(file);
       });
 
-      setUploadingFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "done", url: result.url, progress: 100 } : f)));
-      setUploadedImages((prev) => [...prev, { id, url: result.url, fileName: result.fileName, size: file.size }]);
-      setTimeout(() => setUploadingFiles((prev) => prev.filter((f) => f.id !== id)), 2000);
+      setUploadingFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: "done", url: dataUrl, progress: 100 } : f)));
+      setUploadedImages((prev) => [...prev, { id, url: dataUrl, fileName: file.name, size: file.size }]);
+      setTimeout(() => setUploadingFiles((prev) => prev.filter((f) => f.id !== id)), 1500);
     } catch (err) {
       setUploadingFiles((prev) =>
         prev.map((f) => (f.id === id ? { ...f, status: "error", error: err instanceof Error ? err.message : "Erreur" } : f))
@@ -289,6 +273,33 @@ export default function CampaignForm({
       setValue("countries", next.join(", "));
       return next;
     });
+  };
+
+  const [stepErrors, setStepErrors] = useState<string[]>([]);
+
+  const stepFields: Record<number, (keyof CampaignFormValues)[]> = {
+    1: ["name", "platform", "status", "startDate"],
+    2: ["angle"],
+    3: ["message"],
+    4: [],
+  };
+
+  const handleNextStep = async () => {
+    const fields = stepFields[currentStep];
+    const valid = await trigger(fields);
+    if (!valid) {
+      const msgs: string[] = [];
+      if (errors.name) msgs.push("Nom de la campagne");
+      if (errors.platform) msgs.push("Plateforme");
+      if (errors.status) msgs.push("Statut");
+      if (errors.startDate) msgs.push("Date de début");
+      if (errors.angle) msgs.push("Angle");
+      if (errors.message) msgs.push("Message");
+      setStepErrors(msgs.length > 0 ? [`Champs requis manquants : ${msgs.join(", ")}`] : []);
+      return;
+    }
+    setStepErrors([]);
+    setCurrentStep((s) => s + 1);
   };
 
   const handleFormSubmit = async (data: CampaignFormValues) => {
@@ -821,6 +832,18 @@ export default function CampaignForm({
         </section>
       )}
 
+      {/* Step Errors */}
+      {stepErrors.length > 0 && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
+          {stepErrors.map((msg, i) => (
+            <p key={i} className="text-sm text-red-400 flex items-center gap-2">
+              <AlertCircle size={14} className="shrink-0" />
+              {msg}
+            </p>
+          ))}
+        </div>
+      )}
+
       {/* Navigation + Actions */}
       <div className="flex items-center justify-between border-t border-border pt-6">
         <button
@@ -849,7 +872,7 @@ export default function CampaignForm({
           {currentStep < totalSteps ? (
             <button
               type="button"
-              onClick={() => setCurrentStep((s) => s + 1)}
+              onClick={handleNextStep}
               className="rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-primary-400"
             >
               <span className="flex items-center gap-2">

@@ -95,8 +95,14 @@ export default function SettingsPage() {
         body: JSON.stringify({ category, value }),
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Erreur");
+        let errMsg = "Erreur lors de l'ajout";
+        try {
+          const err = await res.json();
+          errMsg = err.error || errMsg;
+        } catch {
+          // Response wasn't JSON — use default message
+        }
+        throw new Error(errMsg);
       }
       setNewItems((prev) => ({ ...prev, [category]: "" }));
       success(`${categoryConfig[category].label} ajouté avec succès`);
