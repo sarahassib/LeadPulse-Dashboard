@@ -98,7 +98,7 @@ export default function SettingsPage() {
         let errMsg = "Erreur lors de l'ajout";
         try {
           const err = await res.json();
-          errMsg = err.error || errMsg;
+          errMsg = err.details || err.error || errMsg;
         } catch {
           // Response wasn't JSON — use default message
         }

@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
   } catch (e: unknown) {
     console.error("Settings POST error:", e);
     const message = e instanceof Error ? e.message : "Erreur inconnue";
+    const stack = e instanceof Error ? e.stack : "";
+    console.error("Settings POST stack:", stack);
     if (message.includes("Unique constraint")) {
       return NextResponse.json(
         { error: "Cette option existe déjà" },
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { error: "Erreur lors de la création" },
+      { error: "Erreur lors de la création", details: message },
       { status: 500 }
     );
   }
