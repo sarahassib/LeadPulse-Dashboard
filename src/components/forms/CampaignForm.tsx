@@ -150,9 +150,9 @@ export default function CampaignForm({
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("/api/settings?category=ANGLE").then((r) => r.json()).then(setAngles).catch(() => {});
-    fetch("/api/settings?category=CIBLE").then((r) => r.json()).then(setCibles).catch(() => {});
-    fetch("/api/settings?category=OBJECTIF").then((r) => r.json()).then(setObjectifs).catch(() => {});
+    fetch("/api/settings?category=ANGLE").then((r) => r.json()).then((d) => { if (Array.isArray(d)) setAngles(d); }).catch(() => {});
+    fetch("/api/settings?category=CIBLE").then((r) => r.json()).then((d) => { if (Array.isArray(d)) setCibles(d); }).catch(() => {});
+    fetch("/api/settings?category=OBJECTIF").then((r) => r.json()).then((d) => { if (Array.isArray(d)) setObjectifs(d); }).catch(() => {});
   }, []);
 
   useEffect(() => {
