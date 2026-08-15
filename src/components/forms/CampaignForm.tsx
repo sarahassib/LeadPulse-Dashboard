@@ -278,10 +278,25 @@ export default function CampaignForm({
   const [stepErrors, setStepErrors] = useState<string[]>([]);
 
   const stepFields: Record<number, (keyof CampaignFormValues)[]> = {
-    1: ["name", "platform", "status", "startDate"],
+    1: ["campaignId", "name", "platform", "status", "startDate"],
     2: ["angle"],
     3: ["message"],
     4: [],
+  };
+
+  const onFormError = (formErrors: Record<string, { message?: string }>) => {
+    const fieldLabels: Record<string, string> = {
+      campaignId: "ID Campagne",
+      name: "Nom",
+      platform: "Plateforme",
+      status: "Statut",
+      startDate: "Date de début",
+      endDate: "Date de fin",
+      angle: "Angle",
+      message: "Message",
+    };
+    const msgs = Object.keys(formErrors).map((k) => fieldLabels[k] || k);
+    setStepErrors([`Champs requis manquants : ${msgs.join(", ")}`]);
   };
 
   const handleNextStep = async () => {
@@ -324,7 +339,7 @@ export default function CampaignForm({
   ];
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="mx-auto max-w-4xl space-y-6 pb-24">
+    <form onSubmit={handleSubmit(handleFormSubmit, onFormError)} className="mx-auto max-w-4xl space-y-6 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
