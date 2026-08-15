@@ -27,5 +27,5 @@ export async function GET() {
     results.error = e instanceof Error ? e.message : String(e);
   }
 
-  return NextResponse.json(results, { pretty: true });
+  return NextResponse.json(results);
 }
