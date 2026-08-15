@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { enrichCampaign } from "@/lib/calculations";
@@ -17,15 +17,22 @@ import {
   getStatusLabel,
   getStatusColor,
 } from "@/lib/utils";
+import StatusTabs from "@/components/campaigns/StatusTabs";
+import CloseArchiveModal from "@/components/campaigns/CloseArchiveModal";
+import { generateCampaignPDF } from "@/lib/pdf/generateReport";
 import {
   Plus,
   Search,
   ArrowLeft,
   LayoutGrid,
-  BarChart3,
-  Users,
-  Target,
-  TrendingUp,
+  FileText,
+  Pause,
+  Play,
+  Trash2,
+  XCircle,
+  Archive,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 
 const platformOptions = [
@@ -40,16 +47,6 @@ const platformOptions = [
   { value: "OTHER", label: "Autre" },
 ];
 
-const statusOptions = [
-  { value: "ALL", label: "Tous les statuts" },
-  { value: "DRAFT", label: "Brouillon" },
-  { value: "TO_DIFFUSE", label: "À diffuser" },
-  { value: "ACTIVE", label: "En cours" },
-  { value: "PAUSED", label: "En pause" },
-  { value: "COMPLETED", label: "Terminée" },
-  { value: "CANCELLED", label: "Annulée" },
-];
-
 const sortOptions = [
   { value: "leads", label: "Leads" },
   { value: "mql", label: "MQL" },
@@ -57,6 +54,24 @@ const sortOptions = [
   { value: "mqlRate", label: "Taux MQL" },
   { value: "sqlGlobalRate", label: "Taux SQL global" },
 ];
+
+const STATUS_TRANSITIONS: Record<string, { nextStatus: CampaignStatus; label: string; color: string; icon: typeof Play }[]> = {
+  TO_DIFFUSE: [
+    { nextStatus: "ACTIVE", label: "Lancer", color: "bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20", icon: Play },
+  ],
+  ACTIVE: [
+    { nextStatus: "PAUSED", label: "Pause", color: "bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border-yellow-500/20", icon: Pause },
+    { nextStatus: "COMPLETED", label: "Clôturer", color: "bg-primary-500/10 text-primary-400 hover:bg-primary-500/20 border-primary-500/20", icon: Archive },
+  ],
+  PAUSED: [
+    { nextStatus: "ACTIVE", label: "Reprendre", color: "bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20", icon: Play },
+    { nextStatus: "ACTIVE", label: "Clôturer", color: "bg-primary-500/10 text-primary-400 hover:bg-primary-500/20 border-primary-500/20", icon: Archive },
+  ],
+  DRAFT: [
+    { nextStatus: "TO_DIFFUSE", label: "Prêt à diffuser", color: "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20", icon: Play },
+    { nextStatus: "CANCELLED", label: "Annuler", color: "bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20", icon: XCircle },
+  ],
+};
 
 function SkeletonCard() {
   return (
@@ -88,25 +103,48 @@ export default function CampaignsPage() {
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<string>("leads");
+  const [closeArchiveModal, setCloseArchiveModal] = useState<{ isOpen: boolean; campaign: CampaignWithCalculations | null }>({
+    isOpen: false,
+    campaign: null,
+  });
+  const [pdfGenerating, setPdfGenerating] = useState<string | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+
+  const fetchCampaigns = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/campaigns");
+      if (!res.ok) throw new Error("Erreur de chargement");
+      const data = await res.json();
+      setCampaigns(
+        (data.campaigns || []).map((c: Campaign) => enrichCampaign(c))
+      );
+    } catch {
+      setCampaigns([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchCampaigns = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/campaigns");
-        if (!res.ok) throw new Error("Erreur de chargement");
-        const data = await res.json();
-        setCampaigns(
-          (data.campaigns || []).map((c: Campaign) => enrichCampaign(c))
-        );
-      } catch {
-        setCampaigns([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      ALL: campaigns.length,
+      TO_DIFFUSE: 0,
+      ACTIVE: 0,
+      PAUSED: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+      DRAFT: 0,
+    };
+    campaigns.forEach((c) => {
+      counts[c.status] = (counts[c.status] || 0) + 1;
+    });
+    return counts;
+  }, [campaigns]);
 
   const filtered = useMemo(() => {
     let result = campaigns;
@@ -137,6 +175,71 @@ export default function CampaignsPage() {
     return result;
   }, [campaigns, search, platformFilter, statusFilter, sortBy]);
 
+  const handleStatusChange = async (campaignId: string, newStatus: CampaignStatus) => {
+    if (newStatus === "COMPLETED") {
+      const campaign = campaigns.find((c) => c.id === campaignId);
+      if (campaign) {
+        setCloseArchiveModal({ isOpen: true, campaign });
+      }
+      return;
+    }
+
+    setStatusUpdating(campaignId);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Erreur de mise à jour");
+      await fetchCampaigns();
+    } catch (err) {
+      console.error("Status update failed:", err);
+    } finally {
+      setStatusUpdating(null);
+    }
+  };
+
+  const handleConfirmCloseArchive = async (data: {
+    endDate: string;
+    spend: number;
+    leads: number;
+    mql: number;
+    sql: number;
+    nq: number;
+  }) => {
+    const campaign = closeArchiveModal.campaign;
+    if (!campaign) return;
+
+    const res = await fetch(`/api/campaigns/${campaign.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "COMPLETED",
+        endDate: data.endDate,
+        spend: data.spend,
+        leads: data.leads,
+        mql: data.mql,
+        sql: data.sql,
+        nq: data.nq,
+      }),
+    });
+    if (!res.ok) throw new Error("Erreur de mise à jour");
+    setCloseArchiveModal({ isOpen: false, campaign: null });
+    await fetchCampaigns();
+  };
+
+  const handlePDFExport = async (campaign: CampaignWithCalculations) => {
+    setPdfGenerating(campaign.id);
+    try {
+      await generateCampaignPDF(campaign);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setPdfGenerating(null);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
@@ -158,12 +261,20 @@ export default function CampaignsPage() {
           </div>
           <Link
             href="/campaigns/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-secondary text-white rounded-lg text-sm font-medium hover:bg-surface-elevated transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-black rounded-lg text-sm font-semibold hover:bg-primary-400 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nouvelle campagne
           </Link>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <StatusTabs
+          counts={statusCounts}
+          activeStatus={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 mb-6">
@@ -183,17 +294,6 @@ export default function CampaignsPage() {
           className="px-3 py-2.5 border border-border rounded-lg text-sm text-text-secondary bg-surface-card outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
         >
           {platformOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2.5 border border-border rounded-lg text-sm text-text-secondary bg-surface-card outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-        >
-          {statusOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
@@ -249,45 +349,52 @@ export default function CampaignsPage() {
             const badge = getCampaignPerformanceBadge(campaign);
             const hasVisuals =
               campaign.visuals && campaign.visuals.length > 0;
+            const transitions = STATUS_TRANSITIONS[campaign.status] || [];
 
             return (
-              <Link
+              <div
                 key={campaign.id}
-                href={`/campaigns/${campaign.id}`}
-                className="bg-surface-card border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.01] flex flex-col group"
+                className="bg-surface-card border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md flex flex-col"
               >
-                <div className="relative h-36 bg-gradient-to-br from-slate-100 to-slate-200">
-                  {hasVisuals ? (
-                    <img
-                      src={campaign.visuals[0].imageUrl}
-                      alt={campaign.visuals[0].altText || campaign.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <LayoutGrid className="h-10 w-10 text-slate-300" />
-                    </div>
-                  )}
-                  {badge && (
-                    <span
-                      className={cn(
-                        "absolute top-2 right-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border",
-                        badge.bgColor,
-                        badge.color
-                      )}
-                    >
-                      {badge.label}
-                    </span>
-                  )}
-                </div>
+                <Link
+                  href={`/campaigns/${campaign.id}`}
+                  className="block"
+                >
+                  <div className="relative h-36 bg-gradient-to-br from-slate-100 to-slate-200">
+                    {hasVisuals ? (
+                      <img
+                        src={campaign.visuals[0].imageUrl}
+                        alt={campaign.visuals[0].altText || campaign.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center">
+                        <LayoutGrid className="h-10 w-10 text-slate-300" />
+                      </div>
+                    )}
+                    {badge && (
+                      <span
+                        className={cn(
+                          "absolute top-2 right-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border",
+                          badge.bgColor,
+                          badge.color
+                        )}
+                      >
+                        {badge.label}
+                      </span>
+                    )}
+                  </div>
+                </Link>
 
                 <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-white truncate group-hover:text-blue-600 transition-colors">
-                    {campaign.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
-                    {campaign.campaignId}
-                  </p>
+                  <Link href={`/campaigns/${campaign.id}`} className="block">
+                    <h3 className="font-semibold text-white truncate hover:text-primary-400 transition-colors">
+                      {campaign.name}
+                    </h3>
+                    <p className="text-xs text-slate-400 font-mono mt-0.5">
+                      {campaign.campaignId}
+                    </p>
+                  </Link>
 
                   <div className="flex items-center gap-2 mt-2">
                     <span
@@ -310,36 +417,20 @@ export default function CampaignsPage() {
 
                   <div className="mt-3 grid grid-cols-4 gap-1.5">
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase">
-                        Leads
-                      </p>
-                      <p className="text-sm font-bold text-white">
-                        {formatNumber(campaign.leads)}
-                      </p>
+                      <p className="text-[10px] text-slate-400 uppercase">Leads</p>
+                      <p className="text-sm font-bold text-white">{formatNumber(campaign.leads)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase">
-                        MQL
-                      </p>
-                      <p className="text-sm font-bold text-white">
-                        {formatNumber(campaign.mql)}
-                      </p>
+                      <p className="text-[10px] text-slate-400 uppercase">MQL</p>
+                      <p className="text-sm font-bold text-white">{formatNumber(campaign.mql)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase">
-                        SQL
-                      </p>
-                      <p className="text-sm font-bold text-white">
-                        {formatNumber(campaign.sql)}
-                      </p>
+                      <p className="text-[10px] text-slate-400 uppercase">SQL</p>
+                      <p className="text-sm font-bold text-white">{formatNumber(campaign.sql)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase">
-                        NQ
-                      </p>
-                      <p className="text-sm font-bold text-white">
-                        {formatNumber(campaign.nq)}
-                      </p>
+                      <p className="text-[10px] text-slate-400 uppercase">NQ</p>
+                      <p className="text-sm font-bold text-white">{formatNumber(campaign.nq)}</p>
                     </div>
                   </div>
 
@@ -358,20 +449,67 @@ export default function CampaignsPage() {
                     </span>
                   </div>
 
-                  <div className="mt-auto pt-3">
-                    <span className="block w-full py-2 px-3 rounded-lg bg-surface-elevated text-sm font-medium text-text-secondary group-hover:bg-blue-50 group-hover:text-blue-600 border border-border group-hover:border-blue-200 transition-colors text-center">
+                  <div className="mt-auto pt-3 flex items-center gap-2">
+                    {transitions.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        {transitions.map((t) => {
+                          const Icon = t.icon;
+                          return (
+                            <button
+                              key={t.label}
+                              onClick={() => handleStatusChange(campaign.id, t.nextStatus)}
+                              disabled={statusUpdating === campaign.id}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors disabled:opacity-50",
+                                t.color
+                              )}
+                            >
+                              {statusUpdating === campaign.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Icon className="h-3 w-3" />
+                              )}
+                              {t.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => handlePDFExport(campaign)}
+                      disabled={pdfGenerating === campaign.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-border text-text-muted hover:bg-surface-elevated hover:text-white transition-colors disabled:opacity-50 ml-auto"
+                    >
+                      {pdfGenerating === campaign.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <FileDown className="h-3 w-3" />
+                      )}
+                      PDF
+                    </button>
+
+                    <Link
+                      href={`/campaigns/${campaign.id}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-border text-text-muted hover:bg-surface-elevated hover:text-white transition-colors"
+                    >
+                      <FileText className="h-3 w-3" />
                       Voir
-                    </span>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
       )}
+
+      <CloseArchiveModal
+        isOpen={closeArchiveModal.isOpen}
+        onClose={() => setCloseArchiveModal({ isOpen: false, campaign: null })}
+        onConfirm={handleConfirmCloseArchive}
+        campaignName={closeArchiveModal.campaign?.name || ""}
+      />
     </div>
   );
 }
-
-
-
