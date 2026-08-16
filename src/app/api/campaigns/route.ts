@@ -3,59 +3,64 @@ import { prisma } from "@/lib/database";
 import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  try {
+    const { searchParams } = new URL(request.url);
 
-  const search = searchParams.get("search") || "";
-  const platform = searchParams.get("platform") || "";
-  const status = searchParams.get("status") || "";
-  const dateFrom = searchParams.get("dateFrom") || "";
-  const dateTo = searchParams.get("dateTo") || "";
-  const sortBy = searchParams.get("sortBy") || "createdAt";
-  const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
+    const search = searchParams.get("search") || "";
+    const platform = searchParams.get("platform") || "";
+    const status = searchParams.get("status") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
 
-  const where: Prisma.CampaignWhereInput = {};
+    const where: Prisma.CampaignWhereInput = {};
 
-  if (search) {
-    where.OR = [
-      { name: { contains: search } },
-      { campaignId: { contains: search } },
-      { angle: { contains: search } },
-      { message: { contains: search } },
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { campaignId: { contains: search } },
+        { angle: { contains: search } },
+        { message: { contains: search } },
+      ];
+    }
+
+    if (platform && platform !== "ALL") {
+      where.platform = platform;
+    }
+
+    if (status && status !== "ALL") {
+      where.status = status;
+    }
+
+    if (dateFrom || dateTo) {
+      where.startDate = {};
+      if (dateFrom) {
+        where.startDate.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.startDate.lte = new Date(dateTo);
+      }
+    }
+
+    const validSortFields = [
+      "name", "platform", "status", "startDate",
+      "leads", "mql", "sql", "nq", "spend",
+      "createdAt", "updatedAt",
     ];
+    const orderByField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+    const campaigns = await prisma.campaign.findMany({
+      where,
+      include: { visuals: true },
+      orderBy: { [orderByField]: sortOrder },
+    });
+
+    return NextResponse.json({ campaigns });
+  } catch (err) {
+    console.error("GET /api/campaigns error:", err);
+    return NextResponse.json({ error: "Erreur lors du chargement des campagnes", campaigns: [] }, { status: 500 });
   }
-
-  if (platform && platform !== "ALL") {
-    where.platform = platform;
-  }
-
-  if (status && status !== "ALL") {
-    where.status = status;
-  }
-
-  if (dateFrom || dateTo) {
-    where.startDate = {};
-    if (dateFrom) {
-      where.startDate.gte = new Date(dateFrom);
-    }
-    if (dateTo) {
-      where.startDate.lte = new Date(dateTo);
-    }
-  }
-
-  const validSortFields = [
-    "name", "platform", "status", "startDate",
-    "leads", "mql", "sql", "nq", "spend",
-    "createdAt", "updatedAt",
-  ];
-  const orderByField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
-
-  const campaigns = await prisma.campaign.findMany({
-    where,
-    include: { visuals: true },
-    orderBy: { [orderByField]: sortOrder },
-  });
-
-  return NextResponse.json({ campaigns });
 }
 
 export async function DELETE() {

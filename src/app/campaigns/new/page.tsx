@@ -10,23 +10,27 @@ import Link from "next/link";
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const { toasts, success, error } = useToast();
+  const { toasts, success, error, dismiss } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: CampaignFormData) => {
     setIsLoading(true);
     try {
+      const { visuals: _visuals, ...campaignData } = data;
       const res = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(campaignData),
       });
-      if (!res.ok) throw new Error("Erreur lors de la création");
       const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Erreur lors de la création");
+      }
       success("Campagne créée avec succès !");
       router.push(`/campaigns/${result.id}`);
     } catch (e) {
-      error("Une erreur est survenue lors de la création de la campagne.");
+      const msg = e instanceof Error ? e.message : "Une erreur est survenue";
+      error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +44,7 @@ export default function NewCampaignPage() {
           Retour au tableau de bord
         </Link>
         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-blue-600" />
+          <Sparkles className="h-6 w-6 text-yellow-500" />
           Nouvelle campagne
         </h1>
         <p className="text-text-muted mt-1">Créez une nouvelle campagne marketing et enregistrez ses performances.</p>
@@ -51,13 +55,16 @@ export default function NewCampaignPage() {
         onCancel={() => router.push("/dashboard")}
         isLoading={isLoading}
       />
-      {/* Toasts */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => (
-          <div key={t.id} className={`px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${
-            t.type === "success" ? "bg-primary-600" : t.type === "error" ? "bg-red-600" : "bg-accent-500"
-          }`}>
-            {t.message}
+          <div
+            key={t.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${
+              t.type === "success" ? "bg-green-600" : t.type === "error" ? "bg-red-600" : "bg-blue-600"
+            }`}
+          >
+            <span>{t.message}</span>
+            <button onClick={() => dismiss(t.id)} className="ml-2 text-white/70 hover:text-white font-bold">×</button>
           </div>
         ))}
       </div>

@@ -33,6 +33,7 @@ import {
   Archive,
   FileDown,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 const platformOptions = [
@@ -109,18 +110,21 @@ export default function CampaignsPage() {
   });
   const [pdfGenerating, setPdfGenerating] = useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch("/api/campaigns");
-      if (!res.ok) throw new Error("Erreur de chargement");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur de chargement");
       setCampaigns(
         (data.campaigns || []).map((c: Campaign) => enrichCampaign(c))
       );
-    } catch {
+    } catch (e) {
       setCampaigns([]);
+      setFetchError(e instanceof Error ? e.message : "Erreur de connexion");
     } finally {
       setIsLoading(false);
     }
@@ -317,6 +321,20 @@ export default function CampaignsPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
+        </div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 mb-4">
+            <AlertCircle className="h-6 w-6 text-red-400" />
+          </div>
+          <h3 className="text-base font-medium text-white">Erreur de connexion</h3>
+          <p className="mt-1 text-sm text-text-muted max-w-sm">{fetchError}</p>
+          <button
+            onClick={fetchCampaigns}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-black rounded-lg text-sm font-semibold hover:bg-primary-400 transition-colors"
+          >
+            Réessayer
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">

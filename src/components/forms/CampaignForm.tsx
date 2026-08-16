@@ -276,6 +276,13 @@ export default function CampaignForm({
   };
 
   const [stepErrors, setStepErrors] = useState<string[]>([]);
+  const errorBannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (stepErrors.length > 0 && errorBannerRef.current) {
+      errorBannerRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [stepErrors]);
 
   const stepFields: Record<number, (keyof CampaignFormValues)[]> = {
     1: ["campaignId", "name", "platform", "status", "startDate"],
@@ -849,7 +856,7 @@ export default function CampaignForm({
 
       {/* Step Errors */}
       {stepErrors.length > 0 && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
+        <div ref={errorBannerRef} className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
           {stepErrors.map((msg, i) => (
             <p key={i} className="text-sm text-red-400 flex items-center gap-2">
               <AlertCircle size={14} className="shrink-0" />
